@@ -1,5 +1,4 @@
 const HealthRecord = require('../models/HealthRecord');
-const { predictHealth } = require('../utils/healthPredictor');
 
 // @desc    Add a health record
 // @route   POST /api/health
@@ -7,9 +6,6 @@ const { predictHealth } = require('../utils/healthPredictor');
 const addRecord = async (req, res, next) => {
   try {
     const { date, steps, waterIntake, sleepHours, calories, heartRate, weight, notes } = req.body;
-
-    // Run AI prediction on submitted data
-    const prediction = predictHealth({ steps, waterIntake, sleepHours, calories, heartRate, weight });
 
     const record = await HealthRecord.create({
       userId: req.user.id,
@@ -21,16 +17,9 @@ const addRecord = async (req, res, next) => {
       heartRate,
       weight,
       notes,
-      healthScore: prediction.healthScore,
-      riskLevel: prediction.riskLevel,
-      suggestions: prediction.suggestions
     });
 
-    res.status(201).json({
-      success: true,
-      record,
-      prediction
-    });
+    res.status(201).json({ success: true, record });
   } catch (error) {
     next(error);
   }
@@ -99,31 +88,22 @@ const updateRecord = async (req, res, next) => {
       return res.status(404).json({ message: 'Record not found' });
     }
 
-    // Re-run AI prediction with updated data
     const updatedData = {
       steps: steps ?? existingRecord.steps,
       waterIntake: waterIntake ?? existingRecord.waterIntake,
       sleepHours: sleepHours ?? existingRecord.sleepHours,
       calories: calories ?? existingRecord.calories,
       heartRate: heartRate ?? existingRecord.heartRate,
-      weight: weight ?? existingRecord.weight
+      weight: weight ?? existingRecord.weight,
     };
-    const prediction = predictHealth(updatedData);
 
     const record = await HealthRecord.findByIdAndUpdate(
       req.params.id,
-      {
-        ...updatedData,
-        notes,
-        date: date || existingRecord.date,
-        healthScore: prediction.healthScore,
-        riskLevel: prediction.riskLevel,
-        suggestions: prediction.suggestions
-      },
+      { ...updatedData, notes, date: date || existingRecord.date },
       { new: true, runValidators: true }
     );
 
-    res.json({ success: true, record, prediction });
+    res.json({ success: true, record });
   } catch (error) {
     next(error);
   }

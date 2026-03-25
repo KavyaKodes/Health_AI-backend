@@ -10,7 +10,14 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: 'http://localhost:5173',
+  origin: (origin, callback) => {
+    // Allow any localhost / 127.0.0.1 origin (any port) and non-browser tools
+    if (!origin || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 app.use(express.json());
@@ -19,6 +26,7 @@ app.use(express.json());
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/health', require('./routes/health'));
 app.use('/api/predict', require('./routes/prediction'));
+app.use('/api/ai', require('./routes/aiAnalysis'));
 
 // Health check
 app.get('/', (req, res) => {
