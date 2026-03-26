@@ -11,10 +11,18 @@ const app = express();
 // Middleware
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow any localhost / 127.0.0.1 origin (any port) and non-browser tools
-    if (!origin || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) {
+    // Allow localhost (development), Render domains (production), and non-browser tools (like Postman)
+    const allowedOrigins = [
+      /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/,        // Local dev
+      /^https:\/\/.*\.onrender\.com$/,                    // Render deployments
+      // Add your custom frontend string here if you buy a domain in the future:
+      // /^https:\/\/your-custom-domain\.com$/
+    ];
+
+    if (!origin || allowedOrigins.some(regex => regex.test(origin))) {
       callback(null, true);
     } else {
+      console.warn(`CORS blocked origin: ${origin}`);
       callback(new Error('Not allowed by CORS'));
     }
   },
